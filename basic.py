@@ -1,3 +1,17 @@
+import base64
+import gzip
+
+import requests
+
+
+def get_cookie(sNum, cNum, name):
+    text = f"0※{sNum}※3101062002320230{cNum}※{name}※0※"
+    text = gzip.compress(text.encode("utf-8"))
+    text = base64.b64encode(text)
+    # print(text.decode("utf-8"))    # [[NailFecDEBUG]]
+    return text
+
+
 def get_header(text):
     return {"Accept": "*/*", "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5",
             "Cache-Control": "no-cache", "Connection": "keep-alive",
@@ -9,3 +23,45 @@ def get_header(text):
             "Content-Type": "application/x-www-form-urlencoded", "DNT": "1",
             "sec-ch-ua": '"Microsoft Edge";v="125", "Chromium";v="125", "Not.A/Brand";v="24"', "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": '"Windows"', "sec-gpc": "1"}
+
+
+def request0(text):
+    url = "https://semp.xinghuiyuan.com.cn/stutkYczx/SubEvaluate/Handlers/SubEvaluate.ashx?type=getexalist&date=1741962092126"
+    response = requests.post(url, headers=get_header(text))
+    result = response.text
+    # print(result)    # [[NailFecDEBUG]]
+    return result
+
+
+def request1(exalist, text):
+    url = "https://semp.xinghuiyuan.com.cn/stutkYczx/ExamScore/Handlers/ExamScore.ashx?type=getsub&date=1716095218033"
+    data = {"exalist": exalist}
+    response = requests.post(url, headers=get_header(text), data=data)
+    result = response.text
+    return result
+
+
+def request2(selval, allsubsn, text):
+    url = "https://semp.xinghuiyuan.com.cn/stutkYczx/ExamScore/Handlers/ExamScore.ashx?type=getdata2&date=1716095218033"
+    data = {"groupselTab": "1", "selval": selval, "allsubsn": allsubsn}
+    response = requests.post(url, headers=get_header(text), data=data)
+    result = response.text
+    # print(result)  # [[NailFecDEBUG]]
+    return result
+
+
+def analyze_string(result, nsub, onlyUseful):
+    alldata = []
+    lastp = 0
+    for i in range(nsub * 10):
+        pa = result.find("</td><td>", lastp)
+        pb = result.find("</td>", pa + 2)
+        thisData = result[(pa + len("</td><td>")): pb]
+        try:
+            thisData = float(thisData)
+        except ValueError:
+            pass
+        lastp = pa + 2
+        if (not onlyUseful) or (0 <= i < nsub) or (3 * nsub <= i < 4 * nsub):
+            alldata.append(thisData)
+    return alldata

@@ -59,6 +59,7 @@ for exam in result:
         ws.cell(row=iExam, column=i + 3, value=data)
     for i, data in enumerate(allData):
         ws.cell(row=iExam, column=i + len(allsubname) + 3, value=data)
+    print(allsubname)
     print(allData)
 
 wb.save("lsoutput.xlsx")

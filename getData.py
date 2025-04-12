@@ -7,6 +7,14 @@ df = pd.read_excel("2023stu-all.xlsx")
 wb = openpyxl.Workbook()
 ws = wb.active
 
+# [[NailFecMODIFY]]
+selval = 227
+allsubsn = ['876', '895', '891', '884', '879', '882']
+
+ws.cell(row=1, column=1, value="ID")
+ws.cell(row=1, column=2, value="学号")
+ws.cell(row=1, column=3, value="姓名")
+
 for iPerson, row in df.iterrows():
     iPerson = int(iPerson)
     cNum = row["num"]
@@ -14,10 +22,6 @@ for iPerson, row in df.iterrows():
     sNum = row["cookieB"]
     print(cNum, name, sNum)
     text = get_cookie(sNum, cNum, name)
-
-    # [[NailFecMODIFY]]
-    selval = 217
-    allsubsn = ['853', '856']
 
     nsub = len(allsubsn)
     allsubsn = ",".join(allsubsn)

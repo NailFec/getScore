@@ -1,5 +1,6 @@
 import base64
 import gzip
+import json
 
 import requests
 
@@ -26,6 +27,7 @@ def get_header(text):
 
 
 def request0(text):
+    """get all the contests ID for a single student"""
     url = "https://semp.xinghuiyuan.com.cn/stutkYczx/SubEvaluate/Handlers/SubEvaluate.ashx?type=getexalist&date=1741962092126"
     response = requests.post(url, headers=get_header(text))
     result = response.text
@@ -33,7 +35,8 @@ def request0(text):
     return result
 
 
-def request1(exalist, text):
+def request1(exalist, text) -> str:
+    """get all the subjects from one contest with a specific student"""
     url = "https://semp.xinghuiyuan.com.cn/stutkYczx/ExamScore/Handlers/ExamScore.ashx?type=getsub&date=1716095218033"
     data = {"exalist": exalist}
     response = requests.post(url, headers=get_header(text), data=data)
@@ -41,7 +44,26 @@ def request1(exalist, text):
     return result
 
 
+def request1_2(exalist) -> list:
+    """get all the subjects from one contest without a specific student"""
+    cNum = '917'
+    name = '黄相杰'
+    sNum = '330'
+    text = get_cookie(sNum, cNum, name)
+    result1 = json.loads(request1(exalist, text))
+
+    cNum = '742'
+    name = '熊嘉炜'
+    sNum = '269'
+    text = get_cookie(sNum, cNum, name)
+    result2 = json.loads(request1(exalist, text))
+
+    result = list({str(item): item for item in result1 + result2}.values())
+    return result
+
+
 def request2(selval, allsubsn, text):
+    """get a student's score with contest ID & all needed subject IDs"""
     url = "https://semp.xinghuiyuan.com.cn/stutkYczx/ExamScore/Handlers/ExamScore.ashx?type=getdata2&date=1716095218033"
     data = {"groupselTab": "1", "selval": selval, "allsubsn": allsubsn}
     response = requests.post(url, headers=get_header(text), data=data)

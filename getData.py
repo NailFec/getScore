@@ -12,7 +12,7 @@ ws.cell(row=1, column=2, value="学号")
 ws.cell(row=1, column=3, value="姓名")
 
 # [[NailFecMODIFY]]
-selval = 227
+selval = 229
 subresult = request1_2(selval)
 allsubsn = [item["exasubSN"] for item in subresult]
 

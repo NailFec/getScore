@@ -3,7 +3,7 @@ import pandas as pd
 
 from basic import get_cookie, request1_2, request2, analyze_string
 
-df = pd.read_excel("2023stu-all.xlsx")
+df = pd.read_excel("2023stu-class7.xlsx")
 wb = openpyxl.Workbook()
 ws = wb.active
 
@@ -12,7 +12,7 @@ ws.cell(row=1, column=2, value="学号")
 ws.cell(row=1, column=3, value="姓名")
 
 # [[NailFecMODIFY]]
-selval = 229
+selval = 239
 subresult = request1_2(selval)
 allsubsn = [item["exasubSN"] for item in subresult]
 

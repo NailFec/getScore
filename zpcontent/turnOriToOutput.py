@@ -1,4 +1,5 @@
 import pandas as pd
+import csv
 
 df_oridata = pd.read_excel('getgrade/zpcontent1/oridata.xlsx', header=None)
 data = []
@@ -19,5 +20,7 @@ while True:
     except IndexError:
         break
 
-df_output = pd.DataFrame(data)
-df_output.to_excel('getgrade/zpcontent1/output.xlsx', index=False, header=False)
+# Write to CSV
+with open('getgrade/zpcontent1/output.csv', 'w', newline='', encoding='utf-8-sig') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerows(data)

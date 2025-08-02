@@ -1,13 +1,14 @@
 import json
+import csv
 
-import openpyxl
 import pandas as pd
 
 from basic import get_cookie, request0, request1, request2, analyze_string
 
 df = pd.read_excel("2023stu-all.xlsx")
-wb = openpyxl.Workbook()
-ws = wb.active
+
+# Prepare CSV output
+csv_data = []
 
 cNum = int(input("input cNum: "))
 if cNum == 1:
@@ -33,8 +34,8 @@ for exam in result:
     sn = exam["sn"]
     name = exam["name"]
     print(sn, name)
-    ws.cell(row=iExam, column=1, value=sn)
-    ws.cell(row=iExam, column=2, value=name)
+    
+    row_data = [sn, name]
 
     result = request1(sn, text)
     result = json.loads(result)
@@ -55,11 +56,16 @@ for exam in result:
     result = request2(sn, allsubsn, text)
 
     allData = analyze_string(result, nsub, True)
-    for i, data in enumerate(allsubname):
-        ws.cell(row=iExam, column=i + 3, value=data)
-    for i, data in enumerate(allData):
-        ws.cell(row=iExam, column=i + len(allsubname) + 3, value=data)
+    
+    # Add subject names and data to row
+    row_data.extend(allsubname)
+    row_data.extend(allData)
+    
+    csv_data.append(row_data)
     print(allsubname)
     print(allData)
 
-wb.save("lsoutput.xlsx")
+# Write to CSV
+with open("lsoutput.csv", 'w', newline='', encoding='utf-8-sig') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerows(csv_data)

@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_excel('getgrade/zpcontent1/zp1.ycg.NailDATA.xlsx', sheet_name='main')
+df = pd.read_csv('getgrade/zpcontent1/zp1.ycg.NailDATA.csv')
 value_counts = df['政治面貌'].value_counts()
 print(value_counts)
 

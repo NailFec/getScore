@@ -24,8 +24,8 @@ for font_path in font_paths:
 if chinese_font is None:
     chinese_font = FontProperties()
 
-file_path = "output/2Bmid.xlsx"
-data = pd.read_excel(file_path)
+file_path = "output/2Bmid.csv"
+data = pd.read_csv(file_path)
 
 subjects = data.columns[3:14]
 

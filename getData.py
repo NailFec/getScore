@@ -1,16 +1,18 @@
 import pandas as pd
 import csv
+from time import sleep
+import requests
 
 from basic import get_cookie, request1_2, request2, analyze_string
 
-df = pd.read_excel("2023stu-class7.xlsx")
+df = pd.read_excel("2023stu-all.xlsx")
 
 # Prepare CSV output
 csv_data = []
 headers = ["ID", "学号", "姓名"]
 
 # [[NailFecMODIFY]]
-selval = 239
+selval = 256
 subresult = request1_2(selval)
 allsubsn = [item["exasubSN"] for item in subresult]
 
@@ -26,7 +28,32 @@ for iPerson, row in df.iterrows():
     text = get_cookie(sNum, cNum, name)
 
     nsub = len(allsubsn)
-    result = request2(selval, allsubsn, text)
+    
+    # 添加重试机制
+    max_retries = 3
+    retry_count = 0
+    result = None
+    
+    while retry_count < max_retries:
+        try:
+            result = request2(selval, allsubsn, text)
+            if result and not result.startswith("error") and len(result) > 10:
+                break
+            else:
+                raise Exception("服务器返回无效数据")
+        except (requests.RequestException, Exception) as e:
+            retry_count += 1
+            print(f"请求失败 ({retry_count}/{max_retries}): {e}")
+            if retry_count < max_retries:
+                print("等待5秒钟后重试...")
+                sleep(5)
+            else:
+                print(f"达到最大重试次数，跳过学生 {name} ({cNum})")
+                continue
+    
+    if result is None:
+        print(f"无法获取学生 {name} ({cNum}) 的数据，跳过")
+        continue
 
     row_data = [sNum, cNum, name]
 
@@ -35,6 +62,7 @@ for iPerson, row in df.iterrows():
     print(allData)
     
     csv_data.append(row_data)
+    # sleep(0.1)
 
 # Get subject names from the last result for headers
 lastp = 0
@@ -47,7 +75,7 @@ for i in range(nsub):
     lastp = pa + 1
 
 # Write to CSV
-with open("lsoutput.csv", 'w', newline='', encoding='utf-8-sig') as csvfile:
+with open(f"lsoutput-{selval}.csv", 'w', newline='', encoding='utf-8-sig') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(headers)
     writer.writerows(csv_data)

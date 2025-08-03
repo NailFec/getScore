@@ -7,6 +7,9 @@ def add_rankings_to_csv(input_file, output_file):
     """
     Add rankings to each subject and composite score in the CSV file and reorganize columns.
     
+    Input format: chinese, maths, total, chinese, maths, total (score columns followed by grade columns)
+    Output format: score-chinese, score-maths, score-total, grade-chinese, grade-maths, grade-total, rank-chinese, rank-maths, rank-total
+    
     Args:
         input_file (str): Path to input CSV file
         output_file (str): Path to output CSV file
@@ -17,84 +20,89 @@ def add_rankings_to_csv(input_file, output_file):
     # Get the column names
     columns = df.columns.tolist()
     
-    # Define all possible columns that need rankings (subjects, levels, and composite scores)
-    ranking_columns = [
-        # Regular subjects
-        '语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理', '信息',
-        # Subject levels (like 物理等级)
-        '物理等级', '化学等级', '生物等级', '政治等级', '历史等级', '地理等级', '信息等级',
-        # Composite scores
-        '语数英总分', '总分', '理科总分', '文科总分', '六门折算总分'
-    ]
+    # Define columns that should not be ranked (non-numeric identifiers)
+    non_ranking_columns = ['ID', '学号', '姓名', 'id', 'student_id', 'name']
     
-    # Find the positions of score columns and grade columns
-    score_cols = []
-    grade_cols = []
+    # Assuming the first half of columns are scores and second half are grades
+    # For the same subjects
+    num_columns = len(columns)
+    half_point = num_columns // 2
     
-    for i, col in enumerate(columns):
-        if col in ranking_columns:
-            # Check if this is a score column (numeric values) or grade column (letter grades)
-            if i < len(columns) - 1:  # Not the last column
-                # Look at the first few non-null values to determine if it's scores or grades
-                sample_values = df[col].dropna().head(10)
-                if len(sample_values) > 0:
-                    # Check if the first value is numeric (score) or string (grade)
-                    first_val = str(sample_values.iloc[0])
-                    if first_val.replace('.', '').replace('-', '').isdigit() or '.' in first_val:
-                        score_cols.append((col, i))
-                    else:
-                        grade_cols.append((col, i))
+    # Separate student info columns from subject columns
+    student_info_cols = []
+    subject_cols = []
+    
+    for col in columns:
+        base_col = col.split('.')[0]
+        if base_col in non_ranking_columns:
+            student_info_cols.append(col)
+        else:
+            subject_cols.append(col)
+    
+    # Split subject columns into scores and grades
+    score_cols = subject_cols[:len(subject_cols)//2]
+    grade_cols = subject_cols[len(subject_cols)//2:]
     
     # Create a new dataframe with reorganized columns
     new_df = pd.DataFrame()
     
-    # Add student info columns (first 3 columns)
-    student_info_cols = columns[:3]
+    # 1. Add student info columns first
     for col in student_info_cols:
         new_df[col] = df[col]
     
-    # Add score columns with "score-" prefix
-    for col, pos in score_cols:
-        new_df[f'score-{col}'] = df[col]
+    # 2. Add score columns with "score-" prefix
+    for col in score_cols:
+        base_col = col.split('.')[0]
+        new_df[f'score-{base_col}'] = df[col]
     
-    # Add grade columns with "grade-" prefix
-    for col, pos in grade_cols:
-        new_df[f'grade-{col}'] = df[col]
+    # 3. Add grade columns with "grade-" prefix
+    for col in grade_cols:
+        base_col = col.split('.')[0]
+        new_df[f'grade-{base_col}'] = df[col]
     
-    # Add ranking columns for all ranking columns
-    for ranking_col in ranking_columns:
-        # Find the score column for this ranking column
-        score_col = None
-        for col, pos in score_cols:
-            if col == ranking_col:
-                score_col = col
-                break
+    # 4. Add ranking columns for each subject
+    for col in score_cols:
+        base_col = col.split('.')[0]
         
-        if score_col:
-            # Get the scores for this column
-            scores = df[score_col]
-            
-            # Remove NaN values for ranking
-            valid_scores = scores.dropna()
-            
-            if len(valid_scores) > 0:
-                # Create ranking (same rank for same scores)
-                # Use method='min' to handle ties properly - same rank for tied scores, skip next rank
-                ranks = valid_scores.rank(method='min', ascending=False).astype(int)
+        # Get the values for this column
+        values = df[col]
+        
+        # Remove NaN values for ranking
+        valid_values = values.dropna()
+        
+        if len(valid_values) > 0:
+            # Try to convert to numeric for ranking
+            try:
+                numeric_values = pd.to_numeric(valid_values, errors='coerce')
+                # Remove NaN values after conversion
+                numeric_values = numeric_values.dropna()
                 
-                # Create a series with the same index as original df
-                ranking_series = pd.Series(index=df.index, dtype='object')
-                ranking_series.loc[valid_scores.index] = ranks
-                
-                # Add to new dataframe
-                new_df[f'rank-{ranking_col}'] = ranking_series
-            else:
-                # If no valid scores, add empty column
-                new_df[f'rank-{ranking_col}'] = np.nan
+                if len(numeric_values) > 0:
+                    # Create ranking (same rank for same values)
+                    # Use method='min' to handle ties properly - same rank for tied values, skip next rank
+                    ranks = numeric_values.rank(method='min', ascending=False).astype(int)
+                    
+                    # Create a series with the same index as original df
+                    ranking_series = pd.Series(index=df.index, dtype='object')
+                    ranking_series.loc[numeric_values.index] = ranks
+                    
+                    # Add to new dataframe
+                    new_df[f'rank-{base_col}'] = ranking_series
+                else:
+                    # If no valid numeric values, add empty column
+                    new_df[f'rank-{base_col}'] = np.nan
+            except:
+                # If conversion fails, add empty column
+                new_df[f'rank-{base_col}'] = np.nan
+        else:
+            # If no valid values, add empty column
+            new_df[f'rank-{base_col}'] = np.nan
     
     # Save to output file
     new_df.to_csv(output_file, index=False, encoding='utf-8-sig')
     print(f"Successfully processed {input_file} -> {output_file}")
+    print(f"Input columns: {columns}")
+    print(f"Output columns: {new_df.columns.tolist()}")
 
 def process_file(file_number):
     """

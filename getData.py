@@ -12,7 +12,7 @@ csv_data = []
 headers = ["ID", "学号", "姓名"]
 
 # [[NailFecMODIFY]]
-selval = 256
+selval = 199
 subresult = request1_2(selval)
 allsubsn = [item["exasubSN"] for item in subresult]
 
@@ -31,6 +31,7 @@ for iPerson, row in df.iterrows():
     
     # 添加重试机制
     max_retries = 3
+    wait_time = 5
     retry_count = 0
     result = None
     
@@ -45,8 +46,8 @@ for iPerson, row in df.iterrows():
             retry_count += 1
             print(f"请求失败 ({retry_count}/{max_retries}): {e}")
             if retry_count < max_retries:
-                print("等待5秒钟后重试...")
-                sleep(5)
+                print(f"等待{wait_time}秒钟后重试...")
+                sleep(wait_time)
             else:
                 print(f"达到最大重试次数，跳过学生 {name} ({cNum})")
                 continue
